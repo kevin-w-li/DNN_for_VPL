@@ -1,0 +1,379 @@
+#name: "AlexNet"
+# ===========
+# Data Laters
+# ==========
+layer {
+  name: "data"
+  type: "Data"
+  top: "data"
+  top: "label"
+  include {phase:TRAIN}
+  data_param {
+	source: ""
+	backend: LMDB
+	batch_size: 0
+  }
+  transform_param {
+    mean_value: 127
+  }
+}
+
+layer {
+  name: "data"
+  type: "Data"
+  top: "data"
+  top: "label"
+  include {phase:TEST
+           stage:"test"
+  }
+  data_param {
+	source: ""
+	backend: LMDB
+	batch_size: 0
+  }
+ transform_param {
+  mean_value: 127
+  }
+}
+
+layer {
+  name: "data"
+  type: "MemoryData"
+  top: "data"
+  top: "label"
+  memory_data_param {
+  batch_size: 1
+  channels: 1
+  height: 227
+  width: 227
+  }
+  include: {stage:"test_2"}
+}
+
+layer {
+  name: "data"
+  type: "Input"
+  top: "data"
+  input_param {
+    # initial shape for a fully convolutional network:
+    # the shape can be set for each input by reshape.
+    shape: { dim: 1 dim: 1 dim: 227 dim: 227 }
+  }
+  include: {stage:"inspect"}
+}
+
+layer{
+  name: "data"
+  type: "DummyData"
+  top: "data"
+  top: "label"
+  dummy_data_param{
+    shape: {dim: 1 dim:1 dim:227 dim: 227}
+  }
+  include:{not_stage: "inspect", not_stage: "test", not_stage:"test_2", not_stage:"train"}
+}
+
+# add noise
+layer{
+  name: "input_noise"
+  type: "DummyData"
+  top: "noise"
+  dummy_data_param{
+    shape: {dim: 1 dim:1 dim:227 dim: 227}
+    data_filler{
+      type : "gaussian"
+      std : 0.0
+    }
+  }
+}
+
+layer {
+  name: "ctrst"
+  type: "Scale"
+  bottom: "data"
+  top: "data"
+  scale_param {
+    num_axes: 0
+    filler{
+        type: "constant"
+        value: 1.0
+    }
+  }
+}
+
+layer{
+  name: "add_noise"
+  type: "Eltwise"
+  bottom: "noise"
+  bottom: "data"
+  top: "noisy_data"
+  eltwise_param{
+    operation : 1
+  }
+}
+
+# ===========
+# Convolution Layers
+# ==========
+
+# Conv1
+layer {
+  name: "conv1"
+  type: "Convolution"
+  bottom: "noisy_data"
+  top: "conv1"
+  convolution_param {
+    num_output: 96
+    kernel_size: 11
+    stride: 4
+  }
+  param {
+    name:"conv1_w"
+    lr_mult: 0 
+    decay_mult: 0 
+  }
+  param { 
+    name:"conv1_b"
+    lr_mult: 0 
+    decay_mult: 0 
+  }
+}
+
+layer {
+  name: "relu1"
+  type: "ReLU"
+  bottom: "conv1"
+  top: "conv1"
+}
+
+layer {
+  name: "norm1"
+  type: "LRN"
+  bottom: "conv1"
+  top: "norm1"
+  lrn_param {
+    local_size: 5
+    alpha: 0.0001
+    beta: 0.75
+  }
+}
+
+layer {
+  name: "pool1"
+  type: "Pooling"
+  bottom: "norm1"
+  top: "pool1"
+  pooling_param {
+    pool: MAX
+    kernel_size: 3
+    stride: 2
+  }
+}
+
+# Conv2
+layer {
+  name: "conv2"
+  type: "Convolution"
+  bottom: "pool1"
+  top: "conv2"
+  convolution_param {
+    num_output: 256
+    pad: 2
+    kernel_size: 5
+    group: 2
+  }
+  param {
+    name: "conv2_w"
+    lr_mult: 0 
+    decay_mult: 0 
+  }
+  param { 
+    name: "conv2_b"
+    lr_mult: 0 
+    decay_mult: 0 
+  }
+}
+layer {
+  name: "relu2"
+  type: "ReLU"
+  bottom: "conv2"
+  top: "conv2"
+}
+layer {
+  name: "norm2"
+  type: "LRN"
+  bottom: "conv2"
+  top: "norm2"
+  lrn_param {
+    local_size: 5
+    alpha: 0.0001
+    beta: 0.75
+  }
+}
+layer {
+  name: "pool2"
+  type: "Pooling"
+  bottom: "norm2"
+  top: "pool2"
+  pooling_param {
+    pool: MAX
+    kernel_size: 3
+    stride: 2
+  }
+}
+
+# Conv3
+layer {
+  name: "conv3"
+  type: "Convolution"
+  bottom: "pool2"
+  top: "conv3"
+  convolution_param {
+    num_output: 384
+    pad: 1
+    kernel_size: 3
+  }
+  param {
+    name: "conv3_w"
+    lr_mult: 0 
+    decay_mult: 0 }
+  param {
+    name: "conv3_b"
+    lr_mult: 0 
+    decay_mult: 0 }
+}
+layer {
+  name: "relu3"
+  type: "ReLU"
+  bottom: "conv3"
+  top: "conv3"
+}
+
+# Conv4
+layer {
+  name: "conv4"
+  type: "Convolution"
+  bottom: "conv3"
+  top: "conv4"
+  convolution_param {
+    num_output: 384
+    pad: 1
+    kernel_size: 3
+    group: 2
+  }
+  param {name: "conv4_w"  lr_mult: 0 decay_mult: 0 }
+  param {name: "conv4_b"  lr_mult: 0 decay_mult: 0 }
+}
+layer {
+  name: "relu4"
+  type: "ReLU"
+  bottom: "conv4"
+  top: "conv4"
+}
+
+# Conv5
+layer {
+  name: "conv5"
+  type: "Convolution"
+  bottom: "conv4"
+  top: "conv5"
+  convolution_param {
+    num_output: 256
+    pad: 1
+    kernel_size: 3
+    group: 2
+  }
+  param {name:"conv5_w"  lr_mult: 0 decay_mult: 0 }
+  param {name:"conv5_b"  lr_mult: 0 decay_mult: 0 }
+}
+layer {
+  name: "relu5"
+  type: "ReLU"
+  bottom: "conv5"
+  top: "conv5"
+}
+layer {
+  name: "pool5"
+  type: "Pooling"
+  bottom: "conv5"
+  top: "pool5"
+  pooling_param {
+    pool: MAX
+    kernel_size: 3
+    stride: 2
+  }
+}
+
+# ====================
+# InnerProduct layers
+# ====================
+#
+layer {
+  name: "vpl"
+  type: "InnerProduct"
+  bottom: "pool5"
+  top: "vpl"
+  inner_product_param {
+    num_output: 1
+    weight_filler{
+        type: "constant"
+        std: 0.001
+    }
+    bias_filler{type:"constant" value: 0.0}
+  }
+  param {name: "vpl_w" lr_mult: 0 decay_mult: 0 }
+  param {name: "vpl_b" lr_mult: 0 decay_mult: 0 }
+}
+
+layer {
+  name: "neg"
+  type: "Scale"
+  bottom: "vpl"
+  top: "vpl_p"
+  scale_param {
+    num_axes: 0
+    filler{
+        type: "constant"
+        value: -1.0
+    }
+  }
+}
+# Concatenate
+layer{
+  name:"vpl2"
+  type: "Concat"
+  bottom:"vpl"
+  bottom:"vpl_p"
+  top:"fc8"
+  concat_param{axis:1}
+}
+
+layer {
+  name: "loss"
+  type: "SoftmaxWithLoss"
+  bottom: "fc8"
+  bottom: "label"
+  top: "loss"
+  include: {not_stage: "inspect"}
+}
+
+layer {
+    name:"accuracy"
+    type:"Accuracy"
+    bottom: "fc8"
+    bottom: "label"
+    top: "acc"
+    include: {not_stage: "inspect"}    
+}
+
+layer{
+    name:"prob"
+    type:"Softmax"
+    bottom: "fc8"
+    top: "prob" 
+}
+layer{
+    name: "silence"
+    type: "Silence"
+    bottom: "prob"
+}
