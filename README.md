@@ -15,8 +15,8 @@ The code was written in Python 2.7 with the following dependencies:
 
 1. [Caffe 1.0](https://github.com/BVLC/caffe/tree/1.0) built on Ubuntu 14.04 with GPU support.
 1. [CUDA 7.5](https://developer.nvidia.com/cuda-75-downloads-archive)
-1. [cuDNN 5.1 for CUDA 7.5] (https://developer.nvidia.com/rdp/cudnn-archive)
-1. [facemorepher] (https://github.com/alyssaq/face_morpher)
+1. [cuDNN 5.1 for CUDA 7.5](https://developer.nvidia.com/rdp/cudnn-archive)
+1. [facemorepher](https://github.com/alyssaq/face_morpher)
 1. lmdb 0.86 
 1. numpy 1.11.0
 1. matplotlib 1.5.1
